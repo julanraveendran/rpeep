@@ -5,6 +5,7 @@ import { Footer } from '@/components/site/Footer';
 import { Header } from '@/components/site/Header';
 import { JsonLd } from '@/components/site/JsonLd';
 import { SkipLink } from '@/components/site/SkipLink';
+import { UtmCapture } from '@/components/site/UtmCapture';
 import { pages } from '@/content/seo';
 import { site } from '@/content/site';
 import { buildMetadata } from '@/lib/metadata';
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-GB" className={inter.variable}>
       <body>
         <SkipLink />
+        <UtmCapture />
         <Header />
         <main id="main" tabIndex={-1}>
           {children}

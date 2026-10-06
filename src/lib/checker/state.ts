@@ -34,6 +34,8 @@ export type CheckerState = {
   contact: StoredContact | null;
   /** The report this browser requested, so a pilot application can link to it. */
   reportId: string | null;
+  /** First name from the pilot form, for "Thanks, {first name}" on the thanks page. */
+  pilotFirstName: string | null;
 };
 
 export const EMPTY_STATE: CheckerState = {
@@ -43,6 +45,7 @@ export const EMPTY_STATE: CheckerState = {
   readinessDone: false,
   contact: null,
   reportId: null,
+  pilotFirstName: null,
 };
 
 const storedSchema = z.object({
@@ -63,6 +66,7 @@ const storedSchema = z.object({
     .nullable()
     .catch(null),
   reportId: z.uuid().nullable().catch(null),
+  pilotFirstName: z.string().max(60).nullable().catch(null),
 });
 
 /** Reads what is in storage. Never throws: anything unreadable or tampered with becomes an empty state. */

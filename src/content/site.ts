@@ -108,3 +108,18 @@ export function legalLine(year: number): string {
   }
   return `© ${year} ${company.legalEntityName}. Registered in England and Wales, company number ${company.companyNumber}. Registered office: ${company.registeredOffice}.`;
 }
+
+/**
+ * Version and "last updated" date shown on the privacy notice, terms, cookie statement and accessibility statement.
+ * TODO(founder): update the date and version each time one of those pages changes.
+ */
+export const legalVersion = { version: '1.0', lastUpdated: '2026-10-06' } as const;
+
+/** Who is the data controller, as lines for the privacy notice: legal entity or trading name, address and email. */
+export function controllerLines(): string[] {
+  if (company.legalForm === 'sole_trader') {
+    const { tradingName, fullName, address } = company.soleTrader;
+    return [`${tradingName}, a trading name of ${fullName}`, address, contact.email];
+  }
+  return [company.legalEntityName, `Company number ${company.companyNumber}`, `Registered office: ${company.registeredOffice}`, contact.email];
+}

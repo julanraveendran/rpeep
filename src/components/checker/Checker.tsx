@@ -171,7 +171,7 @@ export function Checker() {
           onEdit={() => update((current) => ({ ...current, readinessDone: false }))}
           onBack={back}
         >
-          <ReportSection />
+          <ReportSection showHeading />
         </ReadinessStep>
       );
       break;
