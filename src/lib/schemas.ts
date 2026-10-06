@@ -102,6 +102,9 @@ const answersShape = z.object({
   evacuationStrategy: choice(['stay_put', 'simultaneous', 'temporary_simultaneous', 'phased_or_other', 'unsure']).optional(),
 });
 
+/** Answers as stored while the checker is in progress: any of them may still be missing. Not pruned. */
+export const partialAnswersSchema = answersShape;
+
 const missingMessage = (question: QuestionId): string =>
   question === 'storeys' ? messages.storeys : question === 'heightMetres' ? messages.height : messages.choose;
 
@@ -136,6 +139,9 @@ export const readinessSchema = z.object({
   R5: readinessAnswer,
   R6: readinessAnswer,
 });
+
+/** Readiness answers as stored while the check is in progress. */
+export const partialReadinessSchema = readinessSchema.partial();
 
 // ---------------------------------------------------------------------------
 // Shared fields

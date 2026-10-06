@@ -85,7 +85,7 @@ function Storeys({ className }: { className?: string }) {
       <text x="200" y={groundY + 43} fontSize="12" fill="currentColor" stroke="none">
         not counted
       </text>
-      <text x="10" y="184" fontSize="12" fill="currentColor" stroke="none">
+      <text x="10" y="210" fontSize="12" fill="currentColor" stroke="none">
         Ground level
       </text>
     </svg>

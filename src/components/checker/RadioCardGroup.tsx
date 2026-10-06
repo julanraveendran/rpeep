@@ -19,6 +19,10 @@ type RadioCardGroupProps = {
   onChange: (value: string) => void;
   /** Validation message, for example "Choose an option to continue." */
   error?: string;
+  /** `inline` puts the options side by side on wider screens. Used for the readiness check. */
+  layout?: 'stacked' | 'inline';
+  /** Optional id for the fieldset, so an error summary can link to it. */
+  id?: string;
   className?: string;
 };
 
@@ -26,12 +30,12 @@ type RadioCardGroupProps = {
  * Large clickable option cards built on native radio inputs in a `fieldset` with a
  * `legend`. The browser provides arrow-key navigation and screen reader support.
  */
-export function RadioCardGroup({ name, legend, options, value, onChange, error, className }: RadioCardGroupProps) {
+export function RadioCardGroup({ name, legend, options, value, onChange, error, layout = 'stacked', id, className }: RadioCardGroupProps) {
   const errorId = useId();
   return (
-    <fieldset className={cn('min-w-0', className)} aria-describedby={error ? errorId : undefined}>
+    <fieldset id={id} tabIndex={id ? -1 : undefined} className={cn('min-w-0', className)} aria-describedby={error ? errorId : undefined}>
       <legend className="mb-4 w-full p-0">{legend}</legend>
-      <div className="grid gap-3">
+      <div className={cn('grid gap-3', layout === 'inline' && 'sm:grid-cols-3')}>
         {options.map((option) => (
           <label
             key={option.value}

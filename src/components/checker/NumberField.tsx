@@ -19,6 +19,8 @@ type NumberFieldProps = {
   inputMode?: 'numeric' | 'decimal';
   unknownLabel?: string;
   error?: string;
+  /** Hide the label visually when the question is already shown as a heading. It stays for screen readers. */
+  hideLabel?: boolean;
   className?: string;
 };
 
@@ -34,13 +36,14 @@ export function NumberField({
   inputMode = 'decimal',
   unknownLabel = "I don't know",
   error,
+  hideLabel = false,
   className,
 }: NumberFieldProps) {
   const unitId = useId();
   const errorId = useId();
   return (
     <div className={cn('w-full', className)}>
-      <label htmlFor={id} className="mb-2 block font-semibold text-navy-900">
+      <label htmlFor={id} className={cn('mb-2 block font-semibold text-navy-900', hideLabel && 'sr-only')}>
         {label}
       </label>
       <div className="flex items-center gap-3">
