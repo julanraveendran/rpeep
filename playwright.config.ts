@@ -11,10 +11,13 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${port}`,
     trace: 'on-first-retry',
+    // Optional: point at a pre-installed Chromium when Playwright's own download is not available.
+    launchOptions: process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : {},
   },
   projects: [
     { name: 'desktop-chrome', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-safari', use: { ...devices['iPhone 14'] } },
+    // iPhone viewport, touch and user agent, run in Chromium so one browser install covers both projects.
+    { name: 'mobile-safari-viewport', use: { ...devices['iPhone 14'], defaultBrowserType: 'chromium' } },
   ],
   webServer: {
     command: `npm run build && npm run start -- --port ${port}`,

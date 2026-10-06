@@ -1,7 +1,10 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* Colour tokens: PRD section 5. Contrast to be re-checked in Phase 2. */
+/*
+ * Design tokens: PRD section 5 ("regulator-grade calm").
+ * Every text and background pair is checked in src/design/contrast.test.ts.
+ */
 :root {
   --navy-900: #0f2a44;
   --navy-700: #1e4268;
@@ -14,6 +17,26 @@
   --warning: #b45309;
   --neutral: #475569;
   --error: #b91c1c;
+
+  /*
+   * Additions to the PRD palette, needed to meet WCAG 2.2 AA (PRD section 5 asks
+   * for any pair below the threshold to be adjusted):
+   * - --input-border: --border is 1.2:1 on white, below the 3:1 needed for the
+   *   edge of an input or a radio card (WCAG 1.4.11).
+   * - --on-navy / --on-navy-muted: --muted is 1.9:1 on --navy-900, so text on the
+   *   navy sections uses these instead.
+   * - --focus-on-navy: the --navy-700 focus ring is 1.4:1 on --navy-900, so
+   *   focus rings on navy sections are white.
+   * - --*-soft: tinted backgrounds for alerts. Text on them stays --ink.
+   */
+  --input-border: #6b7280;
+  --on-navy: #ffffff;
+  --on-navy-muted: #cbd5e1;
+  --focus-on-navy: #ffffff;
+  --info-soft: #eff6ff;
+  --warning-soft: #fffbeb;
+  --error-soft: #fef2f2;
+  --success-soft: #f0fdf4;
 }
 
 @theme inline {
@@ -28,17 +51,167 @@
   --color-warning: var(--warning);
   --color-neutral: var(--neutral);
   --color-error: var(--error);
+  --color-input-border: var(--input-border);
+  --color-on-navy: var(--on-navy);
+  --color-on-navy-muted: var(--on-navy-muted);
+  --color-focus-on-navy: var(--focus-on-navy);
+  --color-info-soft: var(--info-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-error-soft: var(--error-soft);
+  --color-success-soft: var(--success-soft);
+
   --font-sans: var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 }
 
-html {
-  color-scheme: light;
+@theme {
+  /* Radius: 8px for cards and inputs, 6px for buttons. */
+  --radius-card: 0.5rem;
+  --radius-button: 0.375rem;
+
+  /* One subtle shadow level only. */
+  --shadow-card: 0 1px 2px rgba(15, 42, 68, 0.06), 0 4px 12px rgba(15, 42, 68, 0.06);
+
+  /* Breakpoints: 640, 768, 1024, 1280px. These are also Tailwind's defaults. */
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
 }
 
-body {
-  background: #fff;
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 1.0625rem;
-  line-height: 1.6;
+@layer base {
+  html {
+    color-scheme: light;
+    /* Leave room for the sticky header when jumping to an anchor. */
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Smooth anchor scrolling, unless the visitor prefers reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    background: #fff;
+    color: var(--ink);
+    font-family: var(--font-sans);
+    /* Body 1.0625rem (17px), line height 1.6. */
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+
+  /* Headings: H1 2.5/2.0 rem, H2 1.875/1.5 rem (700), H3 1.25 rem (600). */
+  h1,
+  h2,
+  h3 {
+    color: var(--navy-900);
+    text-wrap: balance;
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  @media (min-width: 48rem) {
+    h1 {
+      font-size: 2.5rem;
+    }
+    h2 {
+      font-size: 1.875rem;
+    }
+  }
+
+  small {
+    font-size: 0.875rem;
+  }
+
+  a {
+    color: var(--navy-700);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  /* Visible 3px focus ring on every interactive element. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid var(--navy-700);
+    outline-offset: 2px;
+  }
+  /* On navy sections the ring is white, because navy-700 is invisible on navy-900. */
+  .on-navy :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline-color: var(--focus-on-navy);
+  }
+
+  /* Programmatic focus targets (headings, error summary) need no ring on mouse click. */
+  [tabindex='-1']:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Numbers in tables and results use tabular figures. */
+  table,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Content width: 1120px, or 720px for reading pages (guide, legal). */
+  .container-page {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 70rem;
+    padding-inline: 1rem;
+  }
+  .container-reading {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 45rem;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 40rem) {
+    .container-page,
+    .container-reading {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  /* Section padding: 64px mobile, 96px desktop. */
+  .section-y {
+    padding-block: 4rem;
+  }
+  @media (min-width: 48rem) {
+    .section-y {
+      padding-block: 6rem;
+    }
+  }
+
+  /* Maximum line length 70 characters for body text. */
+  .measure {
+    max-width: 70ch;
+  }
 }
