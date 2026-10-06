@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     passWithNoTests: true,
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'supabase/**/*.test.ts'],
     exclude: ['e2e/**', 'node_modules/**'],
   },
 });
