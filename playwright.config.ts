@@ -20,6 +20,8 @@ export default defineConfig({
     command: `npm run build && npm run start -- --port ${port}`,
     url: `http://localhost:${port}/api/health`,
     reuseExistingServer: !process.env.CI,
+    // e2e runs against mocked external services, so skip the real-secret check.
+    env: { SKIP_ENV_VALIDATION: '1' },
     timeout: 180_000,
   },
 });
