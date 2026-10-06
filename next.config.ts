@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { staticSecurityHeaders } from './src/lib/security-headers';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -7,6 +8,10 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@react-pdf/renderer'],
   outputFileTracingIncludes: {
     '/api/report': ['./public/fonts/**/*'],
+  },
+  // Security headers (PRD section 13). The Content-Security-Policy is added per request in src/proxy.ts.
+  async headers() {
+    return [{ source: '/:path*', headers: [...staticSecurityHeaders] }];
   },
 };
 

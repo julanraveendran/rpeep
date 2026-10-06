@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
-import { CTA } from '@/components/site/CTA';
 import type { NavItem } from '@/content/site';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /** Hamburger menu for small screens. Traps focus while open, closes on Escape and returns focus to the button. */
-export function MobileMenu({ items, cta }: { items: readonly NavItem[]; cta: NavItem }) {
+export function MobileMenu({ items, cta }: { items: readonly NavItem[]; /** The call-to-action button, rendered on the server and passed in. */ cta: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -99,9 +98,7 @@ export function MobileMenu({ items, cta }: { items: readonly NavItem[]; cta: Nav
             </ul>
           </nav>
           <div className="mt-4 px-3" onClick={() => setOpen(false)}>
-            <CTA href={cta.href} location="header_mobile" className="w-full">
-              {cta.label}
-            </CTA>
+            {cta}
           </div>
         </div>
       ) : null}

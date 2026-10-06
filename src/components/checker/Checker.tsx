@@ -74,6 +74,8 @@ export function Checker() {
   const requested = hashToStep(hash);
   const step = resolveStep(requested, state);
   const stepKey = stepToHash(step);
+  // Showing the readiness result is a change of screen even though the URL hash stays `#readiness`.
+  const focusKey = step.kind === 'readiness' && state.readinessDone ? `${stepKey}-result` : stepKey;
 
   const result = useMemo(() => resultFor(state.answers), [state.answers]);
   const { answered, next } = askedQuestions(state.answers);
@@ -90,16 +92,16 @@ export function Checker() {
   useEffect(() => {
     if (!hydrated) return;
     if (previousKey.current === null) {
-      previousKey.current = stepKey;
+      previousKey.current = focusKey;
       return;
     }
-    if (previousKey.current === stepKey) return;
-    previousKey.current = stepKey;
+    if (previousKey.current === focusKey) return;
+    previousKey.current = focusKey;
     containerRef.current?.querySelector<HTMLElement>('[data-step-heading]')?.focus();
     setAnnouncement(describeStep(step, { questions: next ? [...answered, next] : answered, status: result?.status, readinessDone: state.readinessDone }));
     // Announce only when the step changes, not when the answers on it change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, stepKey]);
+  }, [hydrated, focusKey]);
 
   // Analytics: the result screen was shown.
   const status = result?.status;

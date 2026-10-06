@@ -15,12 +15,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "sample:pdfs": "tsx scripts/sample-pdfs.tsx"
+    "sample:pdfs": "tsx scripts/sample-pdfs.tsx",
+    "check:bundle": "tsx scripts/check-bundle.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
     "@radix-ui/react-slot": "1.4.0",
     "@react-pdf/renderer": "4.9.0",
+    "@sentry/nextjs": "11.4.0",
     "@supabase/supabase-js": "2.117.2",
     "@upstash/ratelimit": "2.2.0",
     "@upstash/redis": "1.39.0",

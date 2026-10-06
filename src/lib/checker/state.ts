@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import '@/lib/zod-config';
 import { buildingsBandLabels, keysOf, orgTypeLabels, roleLabels } from '@/content/forms';
 import type { ReadinessAnswers } from '@/lib/readiness/score';
 import { partialAnswersSchema, partialReadinessSchema } from '@/lib/schemas';

@@ -11,7 +11,7 @@ export function setErrorReporter(next: Reporter | undefined): void {
   reporter = next;
 }
 
-const EMAIL_PATTERN = /[^\s<>"'()]+@[^\s<>"'()]+\.[^\s<>"'()]+/g;
+const EMAIL_PATTERN = /[^\s<>"'()@]+@[^\s<>"'()@]+\.[^\s<>"'()@.,;:!?]+/g;
 
 /** The error's name and message, with anything that looks like an email address removed. */
 export function safeErrorMessage(error: unknown): string {

@@ -36,7 +36,14 @@ export function Header() {
             {headerCta.label}
           </CTA>
         </div>
-        <MobileMenu items={headerNav} cta={headerCta} />
+        <MobileMenu
+          items={headerNav}
+          cta={
+            <CTA href={headerCta.href} location="header_mobile" className="w-full">
+              {headerCta.label}
+            </CTA>
+          }
+        />
       </div>
     </header>
   );

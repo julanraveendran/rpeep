@@ -51,7 +51,7 @@ Hard rules:
 
 ## Commands
 
-`npm run dev` · `build` · `typecheck` · `lint` · `test` (Vitest) · `e2e` (Playwright)
+`npm run dev` · `build` · `typecheck` · `lint` · `test` (Vitest) · `e2e` (Playwright) · `check:bundle` (no server secrets in the client bundle) · `sample:pdfs`
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -1,8 +1,6 @@
-'use client';
-
 import Link from 'next/link';
-import { Button, type ButtonProps } from '@/components/ui/button';
-import { track } from '@/lib/analytics';
+import { buttonVariants, type ButtonProps } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 type CTAProps = {
   href: string;
@@ -13,13 +11,14 @@ type CTAProps = {
   children: React.ReactNode;
 };
 
-/** A call-to-action link styled as a button. Every CTA fires `cta_clicked` with its location (PRD section 6). */
+/**
+ * A call-to-action link styled as a button. Every CTA fires `cta_clicked` with its location (PRD section 6). This is a
+ * server component so it adds nothing to the page's JavaScript; `CtaTracker` (once, in the layout) sends the event.
+ */
 export function CTA({ href, location, variant = 'primary', className, children }: CTAProps) {
   return (
-    <Button asChild variant={variant} className={className}>
-      <Link href={href} onClick={() => track('cta_clicked', { location })}>
-        {children}
-      </Link>
-    </Button>
+    <Link href={href} data-cta={location} className={cn(buttonVariants({ variant }), className)}>
+      {children}
+    </Link>
   );
 }

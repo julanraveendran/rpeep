@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import '@/lib/zod-config';
 
 /**
  * Environment validation (PRD section 12). The app must fail fast with a clear
@@ -47,6 +48,8 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: required('NEXT_PUBLIC_TURNSTILE_SITE_KEY'),
   /** Optional: analytics do nothing when this is not set. */
   NEXT_PUBLIC_PLAUSIBLE_DOMAIN: z.string().trim().optional(),
+  /** Optional: browser errors go to Sentry only when this is set. A DSN is designed to be public. */
+  NEXT_PUBLIC_SENTRY_DSN: z.union([z.literal(''), url('NEXT_PUBLIC_SENTRY_DSN')]).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

@@ -448,3 +448,9 @@ describe('fieldErrors', () => {
     if (!whole.success) expect(Object.keys(fieldErrors(whole.error))).toEqual(['form']);
   });
 });
+
+describe('Zod does not compile validators with eval (needed for the Content-Security-Policy)', () => {
+  it('has the compiler turned off, so no `new Function` probe runs in the browser', () => {
+    expect(z.config().jitless).toBe(true);
+  });
+});

@@ -24,7 +24,7 @@ export default defineConfig({
     url: `http://localhost:${port}/api/health`,
     reuseExistingServer: !process.env.CI,
     // e2e runs against mocked external services, so skip the real-secret check.
-    env: { SKIP_ENV_VALIDATION: '1' },
+    env: { SKIP_ENV_VALIDATION: '1', NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'test-site-key' },
     timeout: 180_000,
   },
 });

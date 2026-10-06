@@ -25,7 +25,7 @@ export function LegalDetail({ regulation, children, href = links.regulations, cl
         <p>
           <span className="tabular font-semibold">{capitalise(regulation)}</span>
           {' · '}
-          <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1">
+          <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-6 items-center gap-1">
             Read it on legislation.gov.uk
             <ExternalLink className="size-3.5" aria-hidden="true" />
             <span className="sr-only"> (opens in a new tab)</span>

@@ -12,12 +12,11 @@ type FieldShellProps = {
   label: ReactNode;
   hint?: ReactNode;
   error?: string;
-  required?: boolean;
   children: (aria: { id: string; 'aria-describedby': string | undefined; 'aria-invalid': true | undefined }) => ReactNode;
   className?: string;
 };
 
-export function FieldShell({ id, label, hint, error, required, children, className }: FieldShellProps) {
+export function FieldShell({ id, label, hint, error, children, className }: FieldShellProps) {
   const hintId = useId();
   const errorId = useId();
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
@@ -57,7 +56,7 @@ type TextFieldProps = Omit<ComponentProps<'input'>, 'id'> & {
 
 export function TextField({ id, label, hint, error, required, wrapperClassName, className, ...props }: TextFieldProps) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required} className={wrapperClassName}>
+    <FieldShell id={id} label={label} hint={hint} error={error} className={wrapperClassName}>
       {(aria) => <input {...aria} required={required} className={cn(controlClasses, className)} {...props} />}
     </FieldShell>
   );
@@ -75,7 +74,7 @@ type SelectFieldProps = Omit<ComponentProps<'select'>, 'id'> & {
 
 export function SelectField({ id, label, hint, error, options, placeholder = 'Choose…', required, wrapperClassName, className, ...props }: SelectFieldProps) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required} className={wrapperClassName}>
+    <FieldShell id={id} label={label} hint={hint} error={error} className={wrapperClassName}>
       {(aria) => (
         <select {...aria} required={required} defaultValue="" className={cn(controlClasses, 'pr-8', className)} {...props}>
           <option value="" disabled>
@@ -106,7 +105,7 @@ type TextareaFieldProps = Omit<ComponentProps<'textarea'>, 'id'> & {
 export function TextareaField({ id, label, hint, error, count, max, required, wrapperClassName, className, ...props }: TextareaFieldProps) {
   const counterId = useId();
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required} className={wrapperClassName}>
+    <FieldShell id={id} label={label} hint={hint} error={error} className={wrapperClassName}>
       {(aria) => (
         <>
           <textarea

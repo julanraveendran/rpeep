@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import '@/lib/zod-config';
 import {
   buildingsBandLabels,
   currentMethodLabels,
