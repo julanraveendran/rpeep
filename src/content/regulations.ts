@@ -193,3 +193,20 @@ export const duties: readonly Duty[] = [
 
 /** Source line for every duty row (PRD section 7D). */
 export const dutiesSource = 'SI 2025/797 as made';
+
+/**
+ * "regulation 6", "regulations 4 and 5", "regulations 1, 2 and 3": turns the table's regulation
+ * column (for example "4, 5") into words for legal-detail panels and the PDF.
+ */
+export function regulationLabel(regulation: string): string {
+  const numbers = regulation.split(',').map((part) => part.trim());
+  if (numbers.length === 1) return `regulation ${numbers[0]}`;
+  const last = numbers[numbers.length - 1];
+  return `regulations ${numbers.slice(0, -1).join(', ')} and ${last}`;
+}
+
+export function dutyById(id: DutyId): Duty {
+  const duty = duties.find((item) => item.id === id);
+  if (!duty) throw new Error(`Unknown duty: ${id}`);
+  return duty;
+}

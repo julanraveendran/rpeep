@@ -17,8 +17,6 @@ export const site = {
   name: brandName,
   /** Bare domain, no protocol, e.g. `example.co.uk`. */
   domain,
-  /** Canonical origin for metadata, sitemap and links in emails. */
-  url: `https://${domain}`,
   locale: 'en-GB',
   /** One-line description used in the footer and as the default meta description. */
   description: `${brandName} helps Responsible Persons in England manage Residential PEEPs.`,

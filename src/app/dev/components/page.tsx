@@ -9,8 +9,6 @@ import { LegalDetail } from '@/components/ui/legal-detail';
 import { ResultBadge } from '@/components/checker/ResultBadge';
 import { Stepper } from '@/components/checker/Stepper';
 import { CTA } from '@/components/site/CTA';
-import { Footer } from '@/components/site/Footer';
-import { Header } from '@/components/site/Header';
 import { Section } from '@/components/site/Section';
 import { InteractiveExamples } from './InteractiveExamples';
 
@@ -40,11 +38,7 @@ export default function ComponentsPage() {
 
   return (
     <>
-      <div className="relative [&_header]:static">
-        <Header />
-      </div>
-      <main id="main">
-        <Section>
+      <Section>
           <h1>Component showcase</h1>
           <p className="measure mt-3 text-muted">Developer page. Not available in production.</p>
 
@@ -146,9 +140,9 @@ export default function ComponentsPage() {
               <p>The regulations apply in England only.</p>
             </AccordionItem>
           </Accordion>
-        </Section>
+      </Section>
 
-        <Section tone="navy">
+      <Section tone="navy">
           <h2>On a navy section</h2>
           <p className="mt-3 text-on-navy-muted">Text on navy uses white or the lighter on-navy colour.</p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -159,9 +153,7 @@ export default function ComponentsPage() {
               Join the pilot
             </CTA>
           </div>
-        </Section>
-      </main>
-      <Footer />
+      </Section>
     </>
   );
 }
