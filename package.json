@@ -16,7 +16,9 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "sample:pdfs": "tsx scripts/sample-pdfs.tsx",
-    "check:bundle": "tsx scripts/check-bundle.ts"
+    "check:bundle": "tsx scripts/check-bundle.ts",
+    "check:launch": "tsx scripts/check-launch.ts",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

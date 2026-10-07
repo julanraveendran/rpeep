@@ -1,0 +1,182 @@
+# CI and production deploy (PRD sections 15D and 16, phase 12).
+#
+# Every push runs: typecheck, lint, Vitest, Playwright (with the axe scans) and a smoke test of a production build that
+# starts with the full environment check switched on. Production deploys only from main, only after all of those pass,
+# and only once DEPLOY_ENABLED is set to "true" (see docs/DEPLOY.md).
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # A newer push replaces an older run on a branch. Never cancel a run on main, which may be deploying.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  static:
+    name: Typecheck, lint and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  e2e:
+    name: End-to-end and accessibility tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      # Playwright builds the site, starts it, runs every spec on desktop Chrome and the iPhone viewport, and stops it.
+      # External services are stubbed in the specs, so no secrets are needed here. One spec also checks the built
+      # client bundle for server secrets.
+      - run: npx playwright test
+      - name: Upload the Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  smoke:
+    name: Smoke test of a production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Fake values that satisfy the environment check, so the site starts with validation ON (the e2e job turns it off).
+    # Nothing here is a real secret. Cloudflare publishes the Turnstile keys below for testing: the site key always
+    # passes, and the secret key always fails, so the smoke test can check that a fake token is refused.
+    env:
+      NEXT_PUBLIC_SITE_URL: http://localhost:3101
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      TURNSTILE_SECRET_KEY: 2x0000000000000000000000000000000AA
+      SUPABASE_URL: http://127.0.0.1:9
+      SUPABASE_SERVICE_ROLE_KEY: ci-dummy-service-role-key
+      RESEND_API_KEY: re_ci_dummy_key
+      EMAIL_FROM: CI <hello@example.com>
+      EMAIL_REPLY_TO: founder@example.com
+      FOUNDER_EMAIL: founder@example.com
+      UPSTASH_REDIS_REST_URL: http://127.0.0.1:9
+      UPSTASH_REDIS_REST_TOKEN: ci-dummy-token
+      UNSUBSCRIBE_SECRET: ci-dummy-unsubscribe-secret-not-for-production-use
+      IP_HASH_SALT: ci-dummy-ip-hash-salt-not-for-production-use-abc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Start the site
+        run: |
+          npm run start -- --port 3101 > server.log 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl --silent --fail http://localhost:3101/api/health > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo '::error::The site did not start within 30 seconds. Server log:'
+          cat server.log
+          exit 1
+      - run: npm run smoke -- http://localhost:3101
+      - name: Show the server log
+        if: ${{ failure() }}
+        run: cat server.log
+
+  audit:
+    name: Dependency audit (does not block deploys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Production dependencies only. The one advisory in the lint tooling has no fix and never ships to users.
+      - run: npm audit --omit=dev --audit-level=high
+
+  deploy:
+    name: Deploy to Vercel (production)
+    needs: [static, e2e, smoke]
+    # Only from main, only after every check above passed, and only once you have switched deploys on
+    # (Settings > Secrets and variables > Actions > Variables > DEPLOY_ENABLED = true).
+    if: ${{ vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: production
+      url: ${{ vars.SITE_URL }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      VERCEL_CLI_VERSION: 62.7.0
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Check that the content has no placeholders left
+        run: npm run check:launch
+      - name: Check the deploy settings
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo '::error::The SITE_URL variable is not set. Set it to your live address, for example https://example.co.uk'
+            exit 1
+          fi
+      # The Vercel token is given only to the two steps that talk to Vercel, never to the build or to npm.
+      - name: Pull the production settings from Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx --yes "vercel@${VERCEL_CLI_VERSION}" pull --yes --environment=production
+      - name: Build
+        run: npx --yes "vercel@${VERCEL_CLI_VERSION}" build --prod
+      - name: Deploy
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          url=$(npx --yes "vercel@${VERCEL_CLI_VERSION}" deploy --prebuilt --prod)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $url, live at $SITE_URL" >> "$GITHUB_STEP_SUMMARY"
+      - name: Smoke test the live site
+        run: |
+          for attempt in 1 2 3 4; do
+            if npm run smoke -- "$SITE_URL" --launch; then exit 0; fi
+            echo "Attempt $attempt failed. Waiting for the new deployment to take over the domain..."
+            sleep 20
+          done
+          exit 1
