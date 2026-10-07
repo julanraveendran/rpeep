@@ -121,12 +121,34 @@ jobs:
       # Production dependencies only. The one advisory in the lint tooling has no fix and never ships to users.
       - run: npm audit --omit=dev --audit-level=high
 
-  deploy:
-    name: Deploy to Vercel (production)
+  guard:
+    name: Check this is the newest commit on main
     needs: [static, e2e, smoke]
     # Only from main, only after every check above passed, and only once you have switched deploys on
     # (Settings > Secrets and variables > Actions > Variables > DEPLOY_ENABLED = true).
     if: ${{ vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      current: ${{ steps.tip.outputs.current }}
+    steps:
+      - uses: actions/checkout@v4
+      # Re-running an old workflow run, or two quick pushes, must never put an older commit live over a newer one.
+      - name: Compare this commit with the tip of main
+        id: tip
+        run: |
+          latest=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$latest" = "$GITHUB_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Not deploying. main has moved on to ${latest}, so commit ${GITHUB_SHA} is not the newest."
+          fi
+
+  deploy:
+    name: Deploy to Vercel (production)
+    needs: [guard]
+    if: ${{ needs.guard.outputs.current == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment:
