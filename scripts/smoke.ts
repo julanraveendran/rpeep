@@ -2,13 +2,20 @@
  * Smoke test for a running site: `npm run smoke -- <url> [--launch]`.
  *
  * Read-only: it requests pages and sends deliberately invalid requests to the API, so it saves nothing and emails nobody.
- * The one exception is the bot-check test, which sends a made-up Turnstile token. A correctly configured site answers
- * 403. If it answers 200, the site accepted a fake token (a Cloudflare test secret is probably set), and that request
- * has saved one report row for smoke-test@example.invalid.
+ * The one exception is the bot-check test, which sends a made-up Turnstile token. A correctly configured site refuses it
+ * with 403. If the site answers 200, it accepted a fake token (a Cloudflare TEST secret is probably set). That request
+ * has then saved one report row for smoke-test@example.invalid and tried to send two emails: the report, and a
+ * notification to the founder. The script exits with code 3 in that case, so a retry loop can stop at once.
  *
  * It runs in CI against a local production build, and after each production deploy against the live domain.
  * `--launch` adds the checks that only make sense on the real site: no placeholder text left in the pages, no
- * localhost addresses, and the analytics script present.
+ * localhost addresses, the analytics script for this domain, and HTTP redirecting to HTTPS.
+ *
+ * What it cannot show: that Turnstile, Supabase, Resend or Upstash accept the real keys. A wrong key gives the same
+ * answers as a right one for every request made here. Submit the real forms once in a browser after each first deploy
+ * (docs/DEPLOY.md, "Prove it works").
+ *
+ * Exit codes: 0 all checks passed, 1 a check failed, 2 bad usage, 3 the site accepted a fake bot-check token.
  */
 
 export {};
@@ -24,6 +31,7 @@ if (!target) {
 
 const siteOrigin = new URL(target).origin;
 const failures: string[] = [];
+let acceptedFakeToken = false;
 
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
   return fetch(new URL(path, siteOrigin), { redirect: 'manual', signal: AbortSignal.timeout(20_000), ...init });
@@ -51,10 +59,21 @@ async function pageHtml(path: string): Promise<string> {
   const cached = html.get(path);
   if (cached !== undefined) return cached;
   const response = await request(path);
-  assert(response.status === 200, `${path} returned ${response.status}, expected 200`);
+  assert(response.status === 200, `${path} ${describeStatus(response)}`);
   const body = await response.text();
   html.set(path, body);
   return body;
+}
+
+/** A failed status with the likely cause, so the log says what to look at. */
+function describeStatus(response: Response): string {
+  const { status } = response;
+  if (status >= 300 && status < 400) {
+    return `returned ${status}, a redirect to ${response.headers.get('location')}. SITE_URL must be the primary domain, the one that serves the site and does not redirect.`;
+  }
+  if (status === 401) return 'returned 401. Vercel Deployment Protection is probably on for this address. The production domain must be public.';
+  if (status >= 500) return `returned ${status}. On Vercel, a 500 on every page usually means a missing or invalid environment variable: open the project's Logs.`;
+  return `returned ${status}, expected 200`;
 }
 
 function decodeEntities(text: string): string {
@@ -93,11 +112,32 @@ function readableText(body: string): string {
 
 const PLACEHOLDER = /\[[^\]\n<>]+\](?!\()/g;
 
+const PLAUSIBLE_SRC = 'https://plausible.io/js/script.js';
+
+/**
+ * The `data-domain` the page gives to the Plausible script. The layout loads the script with `next/script`, whose default
+ * strategy (`afterInteractive`) adds the `<script>` tag in the browser, so the HTML from the server has no such tag. It has
+ * a `<link rel="preload">` and the script's props in the React Server Components payload, with the quotes escaped:
+ * `{\"data-domain\":\"example.co.uk\",\"src\":\"https://plausible.io/js/script.js\"}`. A plain `<script>` tag is accepted
+ * too, in case the layout ever changes to one.
+ */
+function plausibleDomainIn(body: string): string | undefined {
+  for (const [tag] of body.matchAll(/<script\b[^>]*>/g)) {
+    if (tag.includes(`src="${PLAUSIBLE_SRC}"`)) {
+      const domain = /\sdata-domain="([^"]+)"/.exec(tag)?.[1];
+      if (domain) return domain;
+    }
+  }
+  const payload = body.replace(/\\"/g, '"');
+  const props = new RegExp(`\\{[^{}]*"src":"${PLAUSIBLE_SRC.replace(/[.]/g, '\\.').replace(/\//g, '\\/')}"[^{}]*\\}`).exec(payload)?.[0];
+  return props ? /"data-domain":"([^"]+)"/.exec(props)?.[1] : undefined;
+}
+
 console.log(`Smoke test: ${siteOrigin}${launch ? ' (launch checks on)' : ''}\n`);
 
 await check('GET /api/health returns { ok: true } and a version', async () => {
   const response = await request('/api/health');
-  assert(response.status === 200, `returned ${response.status}`);
+  assert(response.status === 200, describeStatus(response));
   const body = (await response.json()) as { ok?: unknown; version?: unknown };
   assert(body.ok === true && typeof body.version === 'string', `unexpected body ${JSON.stringify(body)}`);
 });
@@ -188,7 +228,7 @@ await check('POST /api/report rejects a body that is not JSON (400) or is over 3
   assert(big.status === 413, `a 40KB body returned ${big.status}`);
 });
 
-await check('POST /api/report and /api/pilot return 400 with field errors for an empty request (so the services are configured)', async () => {
+await check('POST /api/report and /api/pilot return 400 with field errors for an empty request (the server started with its environment variables)', async () => {
   for (const path of ['/api/report', '/api/pilot']) {
     const response = await jsonPost(path, '{}');
     const body = (await response.json()) as { ok?: unknown; error?: unknown; fields?: Record<string, string> };
@@ -203,7 +243,7 @@ await check('GET on the form endpoints returns 405', async () => {
   for (const path of ['/api/report', '/api/pilot']) assert((await request(path)).status === 405, `${path} did not return 405`);
 });
 
-await check('Turnstile rejects a made-up token (403 bot_check), so the secret key is set and Cloudflare can be reached', async () => {
+await check('Turnstile refuses a made-up token (403 bot_check). This does not prove the real widget works: submit the form once in a browser', async () => {
   const response = await jsonPost(
     '/api/report',
     JSON.stringify({
@@ -222,9 +262,10 @@ await check('Turnstile rejects a made-up token (403 bot_check), so the secret ke
     }),
   );
   const body = (await response.json()) as { error?: string; reportId?: string };
+  if (response.status === 200) acceptedFakeToken = true;
   assert(
     response.status !== 200,
-    `the site accepted a fake Turnstile token and saved report ${body.reportId} for smoke-test@example.invalid. A Cloudflare TEST secret key is probably set as TURNSTILE_SECRET_KEY. Delete that row.`,
+    `the site accepted a fake Turnstile token and saved report ${body.reportId} for smoke-test@example.invalid. A Cloudflare TEST secret key is probably set as TURNSTILE_SECRET_KEY. Put the real secret key in Vercel (Production), redeploy, and delete that row.`,
   );
   assert(response.status === 403 && body.error === 'bot_check', `returned ${response.status} ${JSON.stringify(body).slice(0, 120)}, expected 403 bot_check`);
 });
@@ -252,20 +293,26 @@ if (launch) {
   }
 
   await check('the home page loads the Plausible analytics script for this domain', async () => {
-    const body = await pageHtml('/');
-    const domain = /<script[^>]*data-domain="([^"]+)"[^>]*src="https:\/\/plausible\.io\/js\/script\.js"|<script[^>]*src="https:\/\/plausible\.io\/js\/script\.js"[^>]*data-domain="([^"]+)"/.exec(body);
+    const domain = plausibleDomainIn(await pageHtml('/'));
     assert(domain, 'no Plausible script: NEXT_PUBLIC_PLAUSIBLE_DOMAIN is probably not set (it must be set before the build)');
-    assert((domain[1] ?? domain[2]) === new URL(siteOrigin).hostname, `Plausible data-domain is ${domain[1] ?? domain[2]}, expected ${new URL(siteOrigin).hostname}`);
+    // Plausible takes a list of domains and ignores case. "www." is only a naming choice, so it does not count as a difference.
+    const bare = (host: string) => host.trim().toLowerCase().replace(/^www\./, '');
+    const hostname = new URL(siteOrigin).hostname;
+    assert(domain.split(',').some((entry) => bare(entry) === bare(hostname)), `Plausible data-domain is ${domain}, expected ${hostname}. NEXT_PUBLIC_PLAUSIBLE_DOMAIN, the Plausible site name and the domain must agree.`);
   });
 
-  await check('the site is served over HTTPS', async () => {
-    assert(new URL(siteOrigin).protocol === 'https:', `${siteOrigin} is not https`);
+  await check('the site is served over HTTPS, and plain HTTP redirects to it', async () => {
+    const { protocol, host } = new URL(siteOrigin);
+    assert(protocol === 'https:', `${siteOrigin} is not https`);
+    const response = await fetch(`http://${host}/`, { redirect: 'manual', signal: AbortSignal.timeout(20_000) });
+    const location = response.headers.get('location') ?? '';
+    assert([301, 302, 307, 308].includes(response.status) && location.startsWith(`${siteOrigin}/`), `http://${host}/ returned ${response.status} ${location}, expected a redirect to ${siteOrigin}/`);
   });
 }
 
 console.log('');
 if (failures.length > 0) {
   console.error(`${failures.length} check(s) failed:\n  - ${failures.join('\n  - ')}`);
-  process.exit(1);
+  process.exit(acceptedFakeToken ? 3 : 1);
 }
 console.log('All checks passed.');

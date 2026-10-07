@@ -1,0 +1,8 @@
+# Keeps the GitHub Actions used by .github/workflows/ci.yml up to date, including the commit pinned in the deploy job.
+# npm packages are not updated automatically: PRD section 4 pins exact versions.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

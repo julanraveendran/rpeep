@@ -20,6 +20,8 @@ npm run dev                    # http://localhost:3000
 | `npm test` | Vitest: scope engine, schemas, API handlers, emails, PDF, copy checks |
 | `npm run e2e` | Playwright: builds, starts the site and runs the end-to-end and axe tests |
 | `npm run check:bundle` | After a build, fails if a server secret is in the client bundle |
+| `npm run check:launch` | Fails while a `[BRAND]`, `[DOMAIN]` or other placeholder is left in `src/content/`. Set `SITE_URL=https://your-domain` to check the live address too |
+| `npm run smoke -- <url> [--launch]` | Read-only checks of a running site: pages, headers, sitemap, API errors. `--launch` adds the checks for the real domain |
 | `npm run sample:pdfs` | Writes a sample report PDF for each result type to `/tmp/rpeep-sample-pdfs` |
 
 The server refuses to start if a required environment variable is missing (`src/lib/env.ts`). For CI and tests only,
@@ -32,6 +34,13 @@ The server refuses to start if a required environment variable is missing (`src/
 - `src/lib/api/`: the report, pilot and unsubscribe handlers. External services are passed in, so tests use fakes.
 - `supabase/migrations/`: the database. `0001` is the PRD SQL, byte for byte.
 
+## CI and deploy
+
+GitHub Actions (`.github/workflows/ci.yml`) runs typecheck, lint, Vitest, Playwright with the axe scans and a smoke test
+of a production build on every push. A push to `main` that passes everything deploys to Vercel (region `lhr1`) once you
+switch deploys on, and the live site is smoke-tested afterwards. The step-by-step setup is in
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 ## Before launch (you, not the code)
 
 Search the code for `TODO(founder)`. In short, from PRD section 17:
@@ -41,6 +50,8 @@ Search the code for `TODO(founder)`. In short, from PRD section 17:
 - Confirm each provider's region and transfer terms in the privacy notice, audit the cookie page in browser dev tools, and have the privacy notice and terms reviewed.
 - Create the Supabase project (London), run the migrations, enable `pg_cron`, and set up Resend, Turnstile, Upstash, Plausible and Sentry.
 - Run the manual checks in PRD section 15D (email clients, PDF viewers, browsers, Lighthouse on the live site).
+
+[`docs/DEPLOY.md`](docs/DEPLOY.md) walks through every one of these, in order, and through the Vercel and GitHub setup.
 
 ## Dependencies
 

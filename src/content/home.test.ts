@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { faqs } from './faq';
 import { data, freeTool, hero, how, law, lawCards, lawWideCard, pilot, whyBuilding, whyHard } from './home';
 import { dutyById, regulationLabel } from './regulations';
-import { company, founder } from './site';
+import { company, founder, site } from './site';
 
 const bannedWords = ['revolutionary', 'game-changing', 'seamless', 'cutting-edge', 'guarantee compliance', 'makes you compliant'];
 const everything = JSON.stringify({ hero, law, whyHard, how, freeTool, pilot, whyBuilding, data, faqs, lawCards, lawWideCard });
@@ -15,7 +15,7 @@ describe('landing page copy (PRD section 6)', () => {
     expect(hero.secondaryCta).toBe('Join the pilot');
     expect(hero.trustLine).toBe('Free · No account needed · Data hosted in the UK · Built by a fire safety professional');
     expect(hero.subheading).toBe(
-      'Since 6 April 2026, Responsible Persons for many residential buildings must identify residents who may need help to evacuate, offer person-centred fire risk assessments and share key information with the fire service. [BRAND] will help you do it, and evidence that you did.',
+      `Since 6 April 2026, Responsible Persons for many residential buildings must identify residents who may need help to evacuate, offer person-centred fire risk assessments and share key information with the fire service. ${site.name} will help you do it, and evidence that you did.`,
     );
   });
 

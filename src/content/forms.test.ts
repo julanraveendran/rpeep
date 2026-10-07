@@ -14,6 +14,7 @@ import {
   startTimingLabels,
   toOptions,
 } from './forms';
+import { site } from './site';
 
 const prd = readFileSync(new URL('../../docs/PRD.md', import.meta.url), 'utf8');
 
@@ -65,7 +66,7 @@ describe('form options match docs/PRD.md', () => {
 
 describe('consent', () => {
   it('uses the PRD wording, with the brand from site.ts', () => {
-    expect(marketingConsentLabel).toBe('Send me occasional updates about [BRAND] and the pilot. Unsubscribe any time.');
+    expect(marketingConsentLabel).toBe(`Send me occasional updates about ${site.name} and the pilot. Unsubscribe any time.`);
   });
 
   it('versions each form so we know which wording was agreed to', () => {

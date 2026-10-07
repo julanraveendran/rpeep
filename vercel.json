@@ -4,8 +4,6 @@
   "installCommand": "npm ci",
   "regions": ["lhr1"],
   "git": {
-    "deploymentEnabled": {
-      "main": false
-    }
+    "deploymentEnabled": false
   }
 }

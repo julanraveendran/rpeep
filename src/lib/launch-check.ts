@@ -32,6 +32,45 @@ export function findPlaceholders(entries: Readonly<Record<string, string>>): Lau
   return problems;
 }
 
+/** Entries with nothing in them, which a placeholder check alone would let through. */
+export function findEmpty(entries: Readonly<Record<string, string>>): LaunchProblem[] {
+  return Object.entries(entries)
+    .filter(([, text]) => text.trim() === '')
+    .map(([where]) => ({ where, value: '(empty)' }));
+}
+
+/** Everything that stops a launch: empty values and placeholders. */
+export function findLaunchProblems(entries: Readonly<Record<string, string>>): LaunchProblem[] {
+  return [...findEmpty(entries), ...findPlaceholders(entries)];
+}
+
+const BARE_DOMAIN = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
+
+/**
+ * Problems with the live address (`SITE_URL`) and the domain in `src/content/site.ts`: the address must be `https://`
+ * with a bare host and no path, the domain must be a bare host name (no `https://`, no slash), and the two must name the
+ * same site. `www.` is ignored when they are compared, because either can be the primary address.
+ */
+export function checkSiteUrl(siteUrl: string, domain: string): string[] {
+  const problems: string[] = [];
+  if (!BARE_DOMAIN.test(domain)) problems.push(`site.domain "${domain}" must be a bare domain such as example.co.uk, with no https:// and no slash.`);
+  let url: URL | null = null;
+  try {
+    url = new URL(siteUrl);
+  } catch {
+    // reported below
+  }
+  if (!url || url.protocol !== 'https:' || url.pathname !== '/' || url.search !== '' || url.hash !== '' || url.username !== '') {
+    problems.push(`SITE_URL "${siteUrl}" must be your live address, starting with https:// and with no path, for example https://example.co.uk`);
+    return problems;
+  }
+  const bare = (host: string) => host.toLowerCase().replace(/^www\./, '');
+  if (BARE_DOMAIN.test(domain) && bare(url.hostname) !== bare(domain)) {
+    problems.push(`SITE_URL is on ${url.hostname} but site.domain is ${domain}. They must be the same site.`);
+  }
+  return problems;
+}
+
 type Company = {
   legalForm: 'limited_company' | 'sole_trader';
   legalEntityName: string;

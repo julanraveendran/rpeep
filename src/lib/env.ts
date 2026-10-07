@@ -21,9 +21,9 @@ const url = (name: string) => required(name).pipe(z.url({ error: `${name} must b
 const emailAddress = (name: string) =>
   required(name).pipe(z.email({ error: `${name} must be an email address` }));
 
-/** `Brand Name <hello@example.com>` */
+/** `Brand Name <hello@example.com>`. Square brackets are refused, so the `[BRAND] <hello@[DOMAIN]>` from `.env.example` is caught. */
 const namedAddress = (name: string) =>
-  required(name).regex(/^[^<>]+ <[^<>@\s]+@[^<>@\s]+>$/, `${name} must look like: Brand <hello@example.com>`);
+  required(name).regex(/^[^<>[\]]+ <[^<>@\s[\]]+@[^<>@\s[\]]+>$/, `${name} must look like: Brand <hello@example.com> (no square brackets)`);
 
 /** Variables that only server code may read. */
 export const serverEnvSchema = z.object({
@@ -47,7 +47,11 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SITE_URL: url('NEXT_PUBLIC_SITE_URL'),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: required('NEXT_PUBLIC_TURNSTILE_SITE_KEY'),
   /** Optional: analytics do nothing when this is not set. */
-  NEXT_PUBLIC_PLAUSIBLE_DOMAIN: z.string().trim().optional(),
+  NEXT_PUBLIC_PLAUSIBLE_DOMAIN: z
+    .string()
+    .trim()
+    .regex(/^[^[\]]*$/, 'NEXT_PUBLIC_PLAUSIBLE_DOMAIN must be your real domain, not a [DOMAIN] placeholder')
+    .optional(),
   /** Optional: browser errors go to Sentry only when this is set. A DSN is designed to be public. */
   NEXT_PUBLIC_SENTRY_DSN: z.union([z.literal(''), url('NEXT_PUBLIC_SENTRY_DSN')]).optional(),
 });

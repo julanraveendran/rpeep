@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allStrings, collectLaunchEntries, findPlaceholders, PLACEHOLDER } from './launch-check';
+import { allStrings, checkSiteUrl, collectLaunchEntries, findEmpty, findLaunchProblems, findPlaceholders, PLACEHOLDER } from './launch-check';
 
 const company = {
   legalForm: 'limited_company' as const,
@@ -88,5 +88,46 @@ describe('allStrings', () => {
     expect(findPlaceholders({ doc: allStrings(doc) })).toEqual([{ where: 'doc', value: '[BRAND], [To be confirmed before launch]' }]);
     expect(findPlaceholders({ doc: JSON.stringify(doc) }).length).toBe(1); // the JSON form still matches, but its value is long and confusing
     expect(findPlaceholders({ doc: allStrings({ list: ['x', 'y'], link: 'see [ico.org.uk](https://ico.org.uk)' }) })).toEqual([]);
+  });
+});
+
+describe('empty values', () => {
+  it('flags a launch value that is empty or only spaces, which a placeholder check lets through', () => {
+    const entries = collectLaunchEntries({ ...content, founder: { firstName: '  ' }, company: { ...company, companyNumber: '' } });
+    expect(findPlaceholders(entries)).toEqual([]);
+    expect(findEmpty(entries)).toEqual([
+      { where: 'founder.firstName', value: '(empty)' },
+      { where: 'company.companyNumber', value: '(empty)' },
+    ]);
+  });
+
+  it('reports empty values and placeholders together', () => {
+    const entries = collectLaunchEntries({ ...content, site: { name: '[BRAND]', domain: 'exemplar.co.uk' }, founder: { firstName: '' } });
+    expect(findLaunchProblems(entries).map((problem) => problem.where)).toEqual(['founder.firstName', 'site.name']);
+  });
+
+  it('passes finished content', () => {
+    expect(findLaunchProblems(collectLaunchEntries(content))).toEqual([]);
+  });
+});
+
+describe('checkSiteUrl', () => {
+  it.each(['https://exemplar.co.uk', 'https://exemplar.co.uk/', 'https://www.exemplar.co.uk', 'https://EXEMPLAR.co.uk'])('accepts %s for exemplar.co.uk', (url) => {
+    expect(checkSiteUrl(url, 'exemplar.co.uk')).toEqual([]);
+  });
+
+  it.each(['', '   ', 'exemplar.co.uk', 'http://exemplar.co.uk', 'https://exemplar.co.uk/pilot', 'https://exemplar.co.uk?x=1', 'https://user@exemplar.co.uk', 'https://'])(
+    'refuses %j as the live address',
+    (url) => {
+      expect(checkSiteUrl(url, 'exemplar.co.uk')[0]).toMatch(/SITE_URL .* must be your live address, starting with https:\/\//);
+    },
+  );
+
+  it('refuses an address on a different site from site.domain', () => {
+    expect(checkSiteUrl('https://other.co.uk', 'exemplar.co.uk')).toEqual(['SITE_URL is on other.co.uk but site.domain is exemplar.co.uk. They must be the same site.']);
+  });
+
+  it.each(['[DOMAIN]', 'https://exemplar.co.uk', 'exemplar.co.uk/', 'localhost', 'exemplar', 'hello@exemplar.co.uk'])('refuses %s as site.domain', (domain) => {
+    expect(checkSiteUrl('https://exemplar.co.uk', domain).some((problem) => problem.includes('must be a bare domain'))).toBe(true);
   });
 });

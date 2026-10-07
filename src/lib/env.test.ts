@@ -72,6 +72,11 @@ describe('parseServerEnv', () => {
     expect(() => parseServerEnv({ ...valid, EMAIL_FROM: 'hello@example.co.uk' })).toThrow(/EMAIL_FROM must look like/);
   });
 
+  it('rejects the placeholder EMAIL_FROM from .env.example, which Resend would refuse to send from', () => {
+    expect(() => parseServerEnv({ ...valid, EMAIL_FROM: '[BRAND] <hello@[DOMAIN]>' })).toThrow(/EMAIL_FROM must look like/);
+    expect(() => parseServerEnv({ ...valid, EMAIL_FROM: 'Example <hello@[DOMAIN]>' })).toThrow(/EMAIL_FROM must look like/);
+  });
+
   it('accepts an empty SENTRY_DSN and rejects a malformed one', () => {
     expect(parseServerEnv({ ...valid, SENTRY_DSN: '' }).SENTRY_DSN).toBeUndefined();
     expect(parseServerEnv({ ...valid, SENTRY_DSN: 'https://key@o1.ingest.sentry.io/1' }).SENTRY_DSN).toContain('sentry.io');
@@ -83,6 +88,12 @@ describe('parsePublicEnv', () => {
   it('requires the site URL and the Turnstile site key', () => {
     expect(() => parsePublicEnv({})).toThrow(/NEXT_PUBLIC_SITE_URL/);
     expect(() => parsePublicEnv({})).toThrow(/NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
+  });
+
+  it('rejects a placeholder Plausible domain and accepts a real one or none', () => {
+    expect(() => parsePublicEnv({ ...valid, NEXT_PUBLIC_PLAUSIBLE_DOMAIN: '[DOMAIN]' })).toThrow(/NEXT_PUBLIC_PLAUSIBLE_DOMAIN/);
+    expect(parsePublicEnv({ ...valid, NEXT_PUBLIC_PLAUSIBLE_DOMAIN: 'example.co.uk' }).NEXT_PUBLIC_PLAUSIBLE_DOMAIN).toBe('example.co.uk');
+    expect(parsePublicEnv(valid).NEXT_PUBLIC_PLAUSIBLE_DOMAIN).toBeUndefined();
   });
 
   it('never includes a secret', () => {

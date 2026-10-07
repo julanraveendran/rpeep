@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { site } from '@/content/site';
 import type { ReportData } from '@/lib/report/types';
 import { evaluateScope } from '@/lib/scope/engine';
 import { createMailer, createResendTransport, type OutgoingEmail } from './send';
@@ -86,7 +87,7 @@ describe('mailer', () => {
   it('sends the pilot confirmation to the applicant', async () => {
     const { sent, mailer } = setup();
     await mailer.sendPilotConfirmation({ applicationId: 'a1', to: 'sam@example.org', firstName: 'Sam' });
-    expect(sent[0]).toMatchObject({ to: 'sam@example.org', subject: 'Your [BRAND] pilot application' });
+    expect(sent[0]).toMatchObject({ to: 'sam@example.org', subject: `Your ${site.name} pilot application` });
   });
 });
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { contact, founder, legalLine, site } from '@/content/site';
 import { scoreReadiness, type ReadinessAnswers } from '@/lib/readiness/score';
 import type { ReportData } from '@/lib/report/types';
 import { evaluateScope, type Answers } from '@/lib/scope/engine';
@@ -41,7 +42,7 @@ describe('report email (PRD section 9B)', () => {
     expect(text).toContain('The building has at least seven storeys (regulation 3(1)(b)).');
     expect(text).toContain('The report lists the duties that apply, and the gaps from your readiness check.');
     expect(text).toContain("Want help managing RPEEPs? We're opening a small founding pilot: https://example.co.uk/pilot?utm_source=report_email");
-    expect(text).toContain('[First name], Founder, [BRAND] · [DOMAIN]');
+    expect(text).toContain(`${founder.firstName}, ${founder.role}, ${site.name} · ${site.domain}`);
     expect(text.indexOf('Hi Sam')).toBeLessThan(text.indexOf('is attached'));
     expect(text.indexOf('Result:')).toBeLessThan(text.indexOf('Want help managing'));
     expect(text.indexOf('Want help managing')).toBeLessThan(text.indexOf('Founder'));
@@ -63,8 +64,8 @@ describe('report email (PRD section 9B)', () => {
   it('has the footer: legal details, why they received it, the disclaimer and an unsubscribe link, in both versions', () => {
     const { html, text } = render(report({ ...gates, storeys: 9 }));
     for (const body of [html, text]) {
-      expect(body).toContain('Registered in England and Wales, company number [NUMBER]');
-      expect(body).toContain('You received this because you requested a report at [DOMAIN].');
+      expect(body).toContain(body === html ? escapeHtml(legalLine(2026)) : legalLine(2026));
+      expect(body).toContain(`You received this because you requested a report at ${site.domain}.`);
       expect(body).toContain('This is guidance based on SI 2025/797, not legal advice.');
       expect(body).toContain('https://example.co.uk/api/unsubscribe?token=abc.def');
     }
@@ -163,9 +164,9 @@ describe('founder notification for a report (PRD section 9C)', () => {
 describe('pilot emails (PRD section 10)', () => {
   it('confirms the application with the PRD subject and wording', () => {
     const email = renderPilotConfirmation({ firstName: 'Sam', createdAt: new Date('2026-10-06T14:30:00Z') });
-    expect(email.subject).toBe('Your [BRAND] pilot application');
-    expect(email.text).toContain("We'll review your application and reply within 3 working days from hello@[DOMAIN].");
-    expect(email.html).toContain('reply within 3 working days from hello@[DOMAIN]');
+    expect(email.subject).toBe(`Your ${site.name} pilot application`);
+    expect(email.text).toContain(`We'll review your application and reply within 3 working days from ${contact.email}.`);
+    expect(email.html).toContain(`reply within 3 working days from ${contact.email}`);
     expect(email.html).not.toMatch(/<img\b/i);
   });
 

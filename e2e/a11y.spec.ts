@@ -22,6 +22,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('axe: zero violations on every route (PRD section 15C, test 10)', () => {
+  // Smooth scrolling is on by default (src/app/globals.css). Axe can run while the page is still scrolling, with the sticky
+  // header briefly over the footer, and then reports a contrast problem that is not there. Scan the settled page instead.
+  test.use({ reducedMotion: 'reduce' });
+
   for (const route of ['/', '/checker', '/pilot', '/pilot/thanks', '/rpeep-regulations-explained', '/privacy', '/terms', '/cookies', '/accessibility', '/unsubscribe?status=ok', '/unsubscribe?status=invalid', '/this-page-does-not-exist']) {
     test(route, async ({ page }) => {
       await page.goto(route);

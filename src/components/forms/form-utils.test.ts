@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { contact } from '@/content/site';
 import { apiMessages, failureMessage, fieldId, postJson, summariseErrors } from './form-utils';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -72,7 +73,7 @@ describe('failureMessage (PRD section 12)', () => {
     expect(failureMessage({ kind: 'bot_check' }, 'x')).toBe("We couldn't verify you're human. Please refresh and try again.");
     expect(failureMessage({ kind: 'rate_limited' }, 'x')).toBe('Too many requests. Please wait 10 minutes and try again.');
     expect(failureMessage({ kind: 'server' }, apiMessages.network)).toBe(
-      "Something went wrong and your report wasn't sent. Please try again. If it keeps happening, email hello@[DOMAIN].",
+      `Something went wrong and your report wasn't sent. Please try again. If it keeps happening, email ${contact.email}.`,
     );
   });
 });

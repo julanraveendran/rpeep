@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { scoreReadiness, type ReadinessAnswers } from '@/lib/readiness/score';
+import { site } from '@/content/site';
 import type { ReportData } from '@/lib/report/types';
 import { evaluateScope, type Answers } from '@/lib/scope/engine';
 import { renderReportPdf } from './render';
@@ -96,7 +97,7 @@ describe('renderReportPdf (PRD section 9D)', () => {
     expect(out).toContain('Not known');
     expect(out).toContain('What we still need');
     expect(out).toContain('The number of storeys above ground level.');
-    expect(out).toContain('Run the checker again at [DOMAIN]/checker');
+    expect(out).toContain(`Run the checker again at ${site.domain}/checker`);
   });
 
   it.skipIf(!hasPdftotext)('has the other-duties note and "check again" for a building below the thresholds, but not for England', async () => {

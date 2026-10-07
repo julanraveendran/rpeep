@@ -1,14 +1,15 @@
 import { expect, test } from '@playwright/test';
+import { site } from '../src/content/site';
 
 const pages = [
-  { path: '/', title: 'RPEEP compliance for Responsible Persons | [BRAND]', jsonLd: ['Organization', 'FAQPage'] },
+  { path: '/', title: `RPEEP compliance for Responsible Persons | ${site.name}`, jsonLd: ['Organization', 'FAQPage'] },
   { path: '/checker', title: 'Free RPEEP scope checker — is my building in scope?', jsonLd: ['Organization', 'WebApplication'] },
   { path: '/rpeep-regulations-explained', title: 'RPEEP regulations explained in plain English', jsonLd: ['Organization', 'Article'] },
-  { path: '/pilot', title: 'Join the [BRAND] founding pilot', jsonLd: ['Organization'] },
-  { path: '/privacy', title: 'Privacy notice | [BRAND]', jsonLd: ['Organization'] },
-  { path: '/terms', title: 'Terms of use | [BRAND]', jsonLd: ['Organization'] },
-  { path: '/cookies', title: 'Cookie statement | [BRAND]', jsonLd: ['Organization'] },
-  { path: '/accessibility', title: 'Accessibility statement | [BRAND]', jsonLd: ['Organization'] },
+  { path: '/pilot', title: `Join the ${site.name} founding pilot`, jsonLd: ['Organization'] },
+  { path: '/privacy', title: `Privacy notice | ${site.name}`, jsonLd: ['Organization'] },
+  { path: '/terms', title: `Terms of use | ${site.name}`, jsonLd: ['Organization'] },
+  { path: '/cookies', title: `Cookie statement | ${site.name}`, jsonLd: ['Organization'] },
+  { path: '/accessibility', title: `Accessibility statement | ${site.name}`, jsonLd: ['Organization'] },
 ];
 
 test.describe('page metadata and structured data (PRD section 14A)', () => {

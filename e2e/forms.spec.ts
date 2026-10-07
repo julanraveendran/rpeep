@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { contact } from '../src/content/site';
 import { chooseAndContinue, enterNumber, passGates, resultHeading, startChecker } from './helpers';
 import { getEvents, mockPilotApi, mockReportApi, recordEvents, REPORT_ID, stubTurnstile } from './fixtures';
 
@@ -138,7 +139,7 @@ test.describe('report form', () => {
     await page.getByRole('link', { name: 'Skip to my free report' }).click();
     await fillReportForm(page);
     await page.getByRole('button', { name: 'Get my free report' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: "Something went wrong and your report wasn't sent. Please try again. If it keeps happening, email hello@[DOMAIN]." })).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: `Something went wrong and your report wasn't sent. Please try again. If it keeps happening, email ${contact.email}.` })).toBeVisible();
     await expect(page.getByLabel('First name')).toHaveValue('Sam');
     await expect(page.getByLabel('Organisation', { exact: true })).toHaveValue('Example Homes');
     await page.getByRole('button', { name: 'Get my free report' }).click();
@@ -257,7 +258,7 @@ test.describe('pilot form', () => {
 
     await expect(page).toHaveURL(/\/pilot\/thanks$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Thanks, Sam' })).toBeVisible();
-    await expect(page.getByText("We'll review your application and reply within 3 working days from hello@[DOMAIN].")).toBeVisible();
+    await expect(page.getByText(`We'll review your application and reply within 3 working days from ${contact.email}.`)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Back to the free checker' })).toHaveAttribute('href', '/checker');
 
     expect(pilot.bodies).toHaveLength(1);
@@ -343,7 +344,7 @@ test.describe('unsubscribe page', () => {
     await expect(page.getByRole('heading', { level: 1, name: "You've been unsubscribed." })).toBeVisible();
     await page.goto('/unsubscribe?status=invalid');
     await expect(page.getByRole('heading', { level: 1, name: "This link isn't valid." })).toBeVisible();
-    await expect(page.getByText("Email hello@[DOMAIN] and we'll remove you.")).toBeVisible();
+    await expect(page.getByText(`Email ${contact.email} and we'll remove you.`)).toBeVisible();
     await page.goto('/unsubscribe');
     await expect(page.getByRole('heading', { level: 1, name: "This link isn't valid." })).toBeVisible();
   });
